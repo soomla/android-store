@@ -591,7 +591,7 @@ public class BillingService extends Service implements ServiceConnection {
      * Runs any pending requests that are waiting for a connection to the
      * service to be established.  This runs in the main UI thread.
      */
-    private void runPendingRequests() {
+    private synchronized void runPendingRequests() {
         int maxStartId = -1;
         BillingRequest request;
         while ((request = mPendingRequests.peek()) != null) {
