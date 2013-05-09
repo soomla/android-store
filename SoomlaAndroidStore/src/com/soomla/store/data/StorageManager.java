@@ -74,8 +74,10 @@ public class StorageManager {
                 edit.putInt("SA_VER_OLD", sa_ver_new);
                 edit.commit();
 
-                mKvDatabase.deleteKeyVal(KeyValDatabase.keyMetaStorefrontInfo());
-                mKvDatabase.deleteKeyVal(KeyValDatabase.keyMetaStoreInfo());
+                String keyStoreFront = mObfuscator.obfuscateString(KeyValDatabase.keyMetaStorefrontInfo());
+                String keyStoreInfo = mObfuscator.obfuscateString(KeyValDatabase.keyMetaStoreInfo());
+                mKvDatabase.deleteKeyVal(keyStoreFront);
+                mKvDatabase.deleteKeyVal(keyStoreInfo);
             }
         }
 
