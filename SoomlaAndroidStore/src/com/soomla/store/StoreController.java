@@ -64,15 +64,15 @@ public class StoreController extends PurchaseObserver {
 
         SharedPreferences prefs = new ObscuredSharedPreferences(SoomlaApp.getAppContext().getSharedPreferences(StoreConfig.PREFS_NAME, Context.MODE_PRIVATE));
         SharedPreferences.Editor edit = prefs.edit();
-        if (publicKey != null && !publicKey.isEmpty()) {
+        if (publicKey != null && publicKey.length() != 0) {
             edit.putString(StoreConfig.PUBLIC_KEY, publicKey);
-        } else if (prefs.getString(StoreConfig.PUBLIC_KEY, "").isEmpty()) {
+        } else if (prefs.getString(StoreConfig.PUBLIC_KEY, "").length() == 0) {
             StoreUtils.LogError(TAG, "publicKey is null or empty. can't initialize store !!");
             return;
         }
-        if (customSecret != null && !customSecret.isEmpty()) {
+        if (customSecret != null && customSecret.length() != 0) {
             edit.putString(StoreConfig.CUSTOM_SEC, customSecret);
-        } else if (prefs.getString(StoreConfig.CUSTOM_SEC, "").isEmpty()) {
+        } else if (prefs.getString(StoreConfig.CUSTOM_SEC, "").length() == 0) {
             StoreUtils.LogError(TAG, "customSecret is null or empty. can't initialize store !!");
             return;
         }
@@ -103,7 +103,7 @@ public class StoreController extends PurchaseObserver {
 
         SharedPreferences prefs = new ObscuredSharedPreferences(SoomlaApp.getAppContext().getSharedPreferences(StoreConfig.PREFS_NAME, Context.MODE_PRIVATE));
         String publicKey = prefs.getString(StoreConfig.PUBLIC_KEY, "");
-        if (publicKey.isEmpty() || publicKey.equals("[YOUR PUBLIC KEY FROM GOOGLE PLAY]")) {
+        if (publicKey.length() == 0 || publicKey.equals("[YOUR PUBLIC KEY FROM GOOGLE PLAY]")) {
             StoreUtils.LogError(TAG, "You didn't provide a public key! You can't make purchases.");
             return false;
         }

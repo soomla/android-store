@@ -138,7 +138,7 @@ public class Security {
             }
             SharedPreferences prefs = new ObscuredSharedPreferences(SoomlaApp.getAppContext().getSharedPreferences(StoreConfig.PREFS_NAME, Context.MODE_PRIVATE));
             String publicKey = prefs.getString(StoreConfig.PUBLIC_KEY, "");
-            if (publicKey.isEmpty()) {
+            if (publicKey.length() == 0) {
                 Log.w(TAG, "Empty publicKey. Stopping verification.");
                 return null;
             }

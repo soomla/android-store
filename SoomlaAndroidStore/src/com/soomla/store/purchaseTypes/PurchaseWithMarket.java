@@ -55,7 +55,7 @@ public class PurchaseWithMarket extends PurchaseType {
         SharedPreferences prefs = new ObscuredSharedPreferences(
                 SoomlaApp.getAppContext().getSharedPreferences(StoreConfig.PREFS_NAME, Context.MODE_PRIVATE));
         String publicKey = prefs.getString(StoreConfig.PUBLIC_KEY, "");
-        if (publicKey.isEmpty() || publicKey.equals("[YOUR PUBLIC KEY FROM GOOGLE PLAY]")) {
+        if (publicKey.length() == 0 || publicKey.equals("[YOUR PUBLIC KEY FROM GOOGLE PLAY]")) {
             StoreUtils.LogError(TAG, "You didn't provide a public key! You can't make purchases.");
             BusProvider.getInstance().post(new UnexpectedStoreErrorEvent());
             return;
