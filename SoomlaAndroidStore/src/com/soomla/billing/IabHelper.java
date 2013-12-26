@@ -25,7 +25,6 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.os.*;
 import android.text.TextUtils;
-import android.util.Log;
 
 import com.android.vending.billing.IInAppBillingService;
 import com.soomla.store.SoomlaApp;
@@ -625,7 +624,7 @@ public class IabHelper {
      * @param itemInfo The PurchaseInfo that represents the item to consume.
      * @throws IabException if there is a problem during consumption.
      */
-     void consume(Purchase itemInfo) throws IabException {
+     public void consume(Purchase itemInfo) throws IabException {
         checkSetupDone("consume");
 
         if (!itemInfo.mItemType.equals(ITEM_TYPE_INAPP)) {

@@ -20,20 +20,24 @@ import android.app.Application;
 import android.content.Context;
 
 public class SoomlaApp extends Application{
-
-    private static Context context;
+	public static SoomlaApp mInstance = null;
+    
+	public static SoomlaApp instance() {
+    	return mInstance;
+    }
+	
+	public static Context getAppContext()
+	{
+		return instance()._getAppContext();
+	}
 
     @Override
     public void onCreate() {
         super.onCreate();
-        context = getApplicationContext();
+        mInstance = this;
     }
 
-    public static void setExternalContext(Context oContext) {
-        context = oContext;
-    }
-
-    public static Context getAppContext() {
-        return context;
+    protected Context _getAppContext() {
+        return getApplicationContext();
     }
 }
