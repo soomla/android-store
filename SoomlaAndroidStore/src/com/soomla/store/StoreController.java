@@ -463,6 +463,7 @@ public class StoreController {
         @Override
         protected void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
+
             Intent intent = getIntent();
             String productId = intent.getStringExtra(StoreController.PROD_ID);
             String payload = intent.getStringExtra(StoreController.EXTRA_DATA);
@@ -480,17 +481,33 @@ public class StoreController {
 
         @Override
         protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-			if (!StoreController.getInstance().handleActivityResult(requestCode, resultCode, data)) {
-				super.onActivityResult(requestCode, resultCode, data);
+        	if (!StoreController.getInstance().handleActivityResult(requestCode, resultCode, data)) {
+        		super.onActivityResult(requestCode, resultCode, data);
 
-                if (StoreController.getInstance().mHelper == null)
-                {
-                    StoreUtils.LogError(TAG, "helper is null in onActivityResult.");
-                    BusProvider.getInstance().post(new UnexpectedStoreErrorEvent());
-                }
-            }
+        		if (StoreController.getInstance().mHelper == null)
+        		{
+        			StoreUtils.LogError(TAG, "helper is null in onActivityResult.");
+        			BusProvider.getInstance().post(new UnexpectedStoreErrorEvent());
+        		}
+        	}
 
-			finish();
+        	finish();
         }
+
+        @Override
+        protected void onDestroy() {
+        	StoreController sc = StoreController.getInstance();
+        	if(sc.mHelper != null && sc.mHelper.isAsyncInProgress() )
+        	{
+        		sc.mHelper.dispose();
+        		sc.mHelper = null;
+        		BusProvider.getInstance().post(new IabServiceStoppedEvent());
+
+        		String err = "IabActivity is destroyed during purchase.";
+        		StoreUtils.LogError(TAG, err);
+        		BusProvider.getInstance().post(new UnexpectedStoreErrorEvent(err));
+        	}
+        }
+        
     }
 }
