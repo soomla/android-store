@@ -15,21 +15,20 @@
  */
 package com.soomla.store;
 
-import com.soomla.store.billing.IIabService;
-import com.soomla.store.billing.google.GooglePlayIabService;
+import org.onepf.oms.OpenIabHelper;
 
 /**
  * This class holds the store's configurations.
  */
-public class StoreConfig {
+public final class StoreConfig{
+    /** Shared Preferences **/
+    public static final String PREFS_NAME      = "store.prefs";
+    public static final String DB_INITIALIZED  = "db_initialized";
+    public static final String PUBLIC_KEY      = "PO#SU#SO#GU";
+    public static final String CUSTOM_SEC      = "SU#LL#SE#RE";
 
-    /**
-     * Select your in-app billing service.
-     * The default is Google Play using https://github.com/soomla/android-store-google-play
-     */
-    public static final IIabService InAppBillingService = new GooglePlayIabService();
-
-
+    //object to configure billing in the app
+    public static final OpenIabHelper.Options billingOptions = new OpenIabHelper.Options();
 
     /* CHANGE THIS SECRET NOW ! */
     public static String SOOM_SEC = "SINC_SSEEKK";
@@ -58,10 +57,22 @@ public class StoreConfig {
      */
     public static final boolean DB_DELETE = false;
 
-    /** Shared Preferences **/
-    public static final String PREFS_NAME      = "store.prefs";
-    public static final String DB_INITIALIZED  = "db_initialized";
-    public static final String PUBLIC_KEY      = "PO#SU#SO#GU";
-    public static final String CUSTOM_SEC      = "SU#LL#SE#RE";
-
+    /**
+     * Map sku and storeSku for particular store.
+     * <p>
+     * The best approach is to use SKU that unique in universe like <code>com.companyname.application.item</code>.
+     * Such SKU fit most of stores so it doesn't need to be mapped.
+     * <p>
+     * If best approach is not applicable use application inner SKU in code (usually it is SKU for Google Play)
+     * and map SKU from other stores using this method. OpenIAB will map SKU in both directions,
+     * so you can use only your inner SKU
+     *
+     * @param sku - application inner SKU
+     * @param storeSku - shouldn't duplicate already mapped values
+     * @param storeName - @see {@link org.onepf.oms.IOpenAppstore#getAppstoreName()} or {@link org.onepf.oms.OpenIabHelper#NAME_GOOGLE}, {@link org.onepf.oms.OpenIabHelper#NAME_AMAZON}
+     * {@link org.onepf.oms.OpenIabHelper#NAME_AMAZON} and etc.
+     */
+    public static void mapSku(String sku, String storeName, String storeSku) {
+        OpenIabHelper.mapSku(sku, storeName, storeSku);
+    }
 }

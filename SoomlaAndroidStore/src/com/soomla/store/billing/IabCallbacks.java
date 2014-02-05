@@ -15,6 +15,8 @@
  */
 package com.soomla.store.billing;
 
+ import org.onepf.oms.appstore.googleUtils.Purchase;
+
  /**
   * A utility class that defines interfaces for passing callbacks
   * to in-app billing events.
@@ -28,14 +30,14 @@ public class IabCallbacks {
 
 
     public interface OnPurchaseListener {
-        public void success(IabPurchase purchase);
-        public void cancelled(IabPurchase purchase);
-        public void alreadyOwned(IabPurchase purchase);
+        public void success(Purchase purchase);
+        public void cancelled(Purchase purchase);
+        public void alreadyOwned(Purchase purchase);
         public void fail(String message);
     }
 
     public interface OnQueryInventoryListener {
-        public void success(IabPurchase purchase);
+        public void success(Purchase purchase);
         public void fail(String message);
     }
 
