@@ -19,8 +19,31 @@ import com.soomla.store.*;
 import com.soomla.store.data.ObscuredSharedPreferences;
 import com.soomla.store.domain.virtualCurrencies.VirtualCurrency;
 import com.soomla.store.exceptions.VirtualItemNotFoundException;
+import org.onepf.oms.OpenIabHelper;
 
 public class StoreExampleActivity extends Activity {
+    //if you going to use different stores be careful, different stores - in most cases - means different sku names,
+    //you should map your sku names to corresponding stores
+
+    private static final String SKU_PREMIUM = "sku_premium";
+    private static final String SKU_GAS = "sku_gas";
+    private static final String SKU_INFINITE_GAS = "sku_infinite_gas";
+
+    static {
+        StoreConfig.mapSku(SKU_PREMIUM, OpenIabHelper.NAME_AMAZON, "org.onepf.trivialdrive.amazon.premium");
+        StoreConfig.mapSku(SKU_PREMIUM, OpenIabHelper.NAME_TSTORE, "tstore_sku_premium");
+        StoreConfig.mapSku(SKU_PREMIUM, OpenIabHelper.NAME_SAMSUNG, "100000100696/000001003746");
+
+        StoreConfig.mapSku(SKU_GAS, OpenIabHelper.NAME_AMAZON, "org.onepf.trivialdrive.amazon.gas");
+        StoreConfig.mapSku(SKU_GAS, OpenIabHelper.NAME_TSTORE, "tstore_sku_gas");
+        StoreConfig.mapSku(SKU_GAS, OpenIabHelper.NAME_SAMSUNG, "100000100696/000001003744");
+
+        StoreConfig.mapSku(SKU_INFINITE_GAS, OpenIabHelper.NAME_AMAZON, "org.onepf.trivialdrive.amazon.infinite_gas");
+        StoreConfig.mapSku(SKU_INFINITE_GAS, OpenIabHelper.NAME_TSTORE, "tstore_sku_infinite_gas");
+        StoreConfig.mapSku(SKU_INFINITE_GAS, OpenIabHelper.NAME_SAMSUNG, "100000100696/000001003747");
+    }
+
+
     /**
      * Called when the activity is first created.
      */
