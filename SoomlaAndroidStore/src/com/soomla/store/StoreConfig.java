@@ -75,4 +75,12 @@ public final class StoreConfig{
     public static void mapSku(String sku, String storeName, String storeSku) {
         OpenIabHelper.mapSku(sku, storeName, storeSku);
     }
+
+    /**
+     * Are samsung skus declared?
+     * @return
+     */
+    public static boolean hasSamsungSKUs() {
+        return !OpenIabHelper.getAllStoreSkus(OpenIabHelper.NAME_SAMSUNG).isEmpty();
+    }
 }

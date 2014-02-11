@@ -25,23 +25,23 @@ public class StoreExampleActivity extends Activity {
     //if you going to use different stores be careful, different stores - in most cases - means different sku names,
     //you should map your sku names to corresponding stores
 
-//    private static final String SKU_PREMIUM = "sku_premium";
-//    private static final String SKU_GAS = "sku_gas";
-//    private static final String SKU_INFINITE_GAS = "sku_infinite_gas";
-//
-//    static {
-//        StoreConfig.mapSku(SKU_PREMIUM, OpenIabHelper.NAME_AMAZON, "org.onepf.trivialdrive.amazon.premium");
-//        StoreConfig.mapSku(SKU_PREMIUM, OpenIabHelper.NAME_TSTORE, "tstore_sku_premium");
-//        StoreConfig.mapSku(SKU_PREMIUM, OpenIabHelper.NAME_SAMSUNG, "100000100696/000001003746");
-//
-//        StoreConfig.mapSku(SKU_GAS, OpenIabHelper.NAME_AMAZON, "org.onepf.trivialdrive.amazon.gas");
-//        StoreConfig.mapSku(SKU_GAS, OpenIabHelper.NAME_TSTORE, "tstore_sku_gas");
-//        StoreConfig.mapSku(SKU_GAS, OpenIabHelper.NAME_SAMSUNG, "100000100696/000001003744");
-//
-//        StoreConfig.mapSku(SKU_INFINITE_GAS, OpenIabHelper.NAME_AMAZON, "org.onepf.trivialdrive.amazon.infinite_gas");
-//        StoreConfig.mapSku(SKU_INFINITE_GAS, OpenIabHelper.NAME_TSTORE, "tstore_sku_infinite_gas");
-//        StoreConfig.mapSku(SKU_INFINITE_GAS, OpenIabHelper.NAME_SAMSUNG, "100000100696/000001003747");
-//    }
+    private static final String SKU_PREMIUM = "sku_premium";
+    private static final String SKU_GAS = "sku_gas";
+    private static final String SKU_INFINITE_GAS = "sku_infinite_gas";
+
+    static {
+        StoreConfig.mapSku(SKU_PREMIUM, OpenIabHelper.NAME_AMAZON, "org.onepf.trivialdrive.amazon.premium");
+        StoreConfig.mapSku(SKU_PREMIUM, OpenIabHelper.NAME_TSTORE, "tstore_sku_premium");
+        StoreConfig.mapSku(SKU_PREMIUM, OpenIabHelper.NAME_SAMSUNG, "100000100696/000001003746");
+
+        StoreConfig.mapSku(SKU_GAS, OpenIabHelper.NAME_AMAZON, "org.onepf.trivialdrive.amazon.gas");
+        StoreConfig.mapSku(SKU_GAS, OpenIabHelper.NAME_TSTORE, "tstore_sku_gas");
+        StoreConfig.mapSku(SKU_GAS, OpenIabHelper.NAME_SAMSUNG, "100000100696/000001003744");
+
+        StoreConfig.mapSku(SKU_INFINITE_GAS, OpenIabHelper.NAME_AMAZON, "org.onepf.trivialdrive.amazon.infinite_gas");
+        StoreConfig.mapSku(SKU_INFINITE_GAS, OpenIabHelper.NAME_TSTORE, "tstore_sku_infinite_gas");
+        StoreConfig.mapSku(SKU_INFINITE_GAS, OpenIabHelper.NAME_SAMSUNG, "100000100696/000001003747");
+    }
 
 
     /**
@@ -81,7 +81,7 @@ public class StoreExampleActivity extends Activity {
         IStoreAssets storeAssets = new MuffinRushAssets();
         StoreController.getInstance().initialize(storeAssets,
                 "[YOUR PUBLIC KEY FROM GOOGLE PLAY HERE]",
-                "[YOUR CUSTOM GAME SECRET HERE]", this);
+                "[YOUR CUSTOM GAME SECRET HERE]");
         mEventHandler = new ExampleEventHandler(mHandler, this);
 
         // Checking if it's a first run and adding 10000 currencies if it is.

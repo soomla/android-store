@@ -21,6 +21,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 
+import android.text.TextUtils;
 import com.soomla.store.billing.IabCallbacks;
 import com.soomla.store.billing.OpenIabService;
 import com.soomla.store.data.ObscuredSharedPreferences;
@@ -59,7 +60,6 @@ public class StoreController {
 
     private OpenIabService openIabService;
     private boolean initialized;
-    private Activity activity;
 
     /* Singleton */
     private static StoreController sInstance;
@@ -83,7 +83,7 @@ public class StoreController {
      * @param publicKey    is the public key given to you from Google.
      * @param customSecret is your encryption secret (it's used to encrypt your data in the database)
      */
-    public boolean initialize(IStoreAssets storeAssets, String publicKey, String customSecret, Activity activity) {
+    public boolean initialize(IStoreAssets storeAssets, String publicKey, String customSecret) {
         if (initialized) {
             String err = "StoreController is already initialized. You can't initialize it twice!";
             StoreUtils.LogError(TAG, err);
@@ -97,8 +97,6 @@ public class StoreController {
             BusProvider.getInstance().post(new UnexpectedStoreErrorEvent(err));
             return false;
         }
-
-        this.activity = activity;
 
         StoreUtils.LogDebug(TAG, "StoreController Initializing ...");
 
@@ -132,11 +130,6 @@ public class StoreController {
         // Update SOOMLA store from DB
         StoreInfo.initializeFromDB();
 
-        //set activity context
-        openIabService.setActivity(activity);
-
-        initialized = true;
-
         // Set up helper for the first time, querying and synchronizing inventory
         openIabService.initializeBillingService(new IabCallbacks.IabInitListener() {
             @Override
@@ -168,13 +161,14 @@ public class StoreController {
             }
         });
 
+
+        initialized = true;
         BusProvider.getInstance().post(new StoreControllerInitializedEvent());
         return true;
     }
 
 
     public void startIabServiceInBg() {
-        checkForInit();
         openIabService.startIabServiceInBg(new IabCallbacks.IabInitListener() {
 
             @Override
@@ -194,14 +188,7 @@ public class StoreController {
         });
     }
 
-    private void checkForInit() {
-        if (!initialized) {
-            throw new IllegalStateException("Store Controller must be initialized before using!");
-        }
-    }
-
     public void stopIabServiceInBg() {
-        checkForInit();
         openIabService.stopIabServiceInBg(new IabCallbacks.IabInitListener() {
 
             @Override
@@ -220,7 +207,6 @@ public class StoreController {
      * Initiate the restoreTransactions process
      */
     public void restoreTransactions() {
-        checkForInit();
         openIabService.initializeBillingService(new IabCallbacks.IabInitListener() {
 
             @Override
@@ -261,7 +247,6 @@ public class StoreController {
      * @throws IllegalStateException
      */
     public void buyWithMarket(MarketItem marketItem, String payload) throws IllegalStateException {
-        checkForInit();
         SharedPreferences prefs = new ObscuredSharedPreferences(SoomlaApp.getAppContext().getSharedPreferences(StoreConfig.PREFS_NAME, Context.MODE_PRIVATE));
         String publicKey = prefs.getString(StoreConfig.PUBLIC_KEY, "");
         if (publicKey.length() == 0 || publicKey.equals("[YOUR PUBLIC KEY FROM GOOGLE PLAY]")) {
@@ -270,7 +255,8 @@ public class StoreController {
         }
 
         try {
-            final Intent intent = new Intent(activity, IabActivity.class);
+            final Intent intent = new Intent(SoomlaApp.getAppContext(), IabActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             intent.putExtra(PROD_ID, marketItem.getProductId());
             intent.putExtra(EXTRA_DATA, payload);
 
@@ -281,7 +267,7 @@ public class StoreController {
                     if (!alreadyInBg) {
                         notifyIabServiceStarted();
                     }
-                    activity.startActivity(intent);
+                    SoomlaApp.getAppContext().startActivity(intent);
                 }
 
                 @Override
@@ -300,13 +286,11 @@ public class StoreController {
     /*====================   Common callbacks for success \ failure \ finish   ====================*/
 
     private void notifyIabServiceStarted() {
-        checkForInit();
         BusProvider.getInstance().post(new BillingSupportedEvent());
         BusProvider.getInstance().post(new IabServiceStartedEvent());
     }
 
     private void reportIabInitFailure(String message) {
-        checkForInit();
         String msg = "There's no connectivity with the billing service. error: " + message;
         StoreUtils.LogDebug(TAG, msg);
         BusProvider.getInstance().post(new BillingNotSupportedEvent());
@@ -317,7 +301,6 @@ public class StoreController {
      * Used for internal starting of purchase with Google Play. Do *NOT* call this on your own.
      */
     private boolean buyWithMarketInner(final Activity activity, final String sku, final String payload) {
-        checkForInit();
         final PurchasableVirtualItem pvi;
         try {
             pvi = StoreInfo.getPurchasableItem(sku);
@@ -381,7 +364,6 @@ public class StoreController {
      * @param purchase
      */
     private void handleSuccessfulPurchase(Purchase purchase) {
-        checkForInit();
         String sku = purchase.getSku();
         String developerPayload = purchase.getDeveloperPayload();
 
@@ -423,7 +405,6 @@ public class StoreController {
      * @param purchase
      */
     private void handleCancelledPurchase(Purchase purchase) {
-        checkForInit();
         String sku = purchase.getSku();
         try {
             PurchasableVirtualItem v = StoreInfo.getPurchasableItem(sku);
@@ -437,7 +418,6 @@ public class StoreController {
     }
 
     private void consumeIfConsumable(Purchase purchase) {
-        checkForInit();
         String sku = purchase.getSku();
         try {
             PurchasableVirtualItem pvi = StoreInfo.getPurchasableItem(sku);
@@ -463,7 +443,6 @@ public class StoreController {
      * @param message
      */
     private void handleErrorResult(String message) {
-        checkForInit();
         BusProvider.getInstance().post(new UnexpectedStoreErrorEvent(message));
         StoreUtils.LogError(TAG, "ERROR: Purchase failed: " + message);
     }
@@ -475,23 +454,32 @@ public class StoreController {
      * Do not start it on your own.
      */
     public static class IabActivity extends Activity {
+        public static final String OPENPF_ACTION_START_ACTIVITY = "OPENPF_ACTION_START_ACTIVITY";
+        public static final String OPENPF_ACTION_ACTIVITY_STARTED = "OPENPF_ACTION_ACTIVITY_STARTED";
+        public static IabActivity instance; // shame, really shame
 
         @Override
         protected void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
+            instance = this;
             Intent intent = getIntent();
-            String productId = intent.getStringExtra(PROD_ID);
-            String payload = intent.getStringExtra(EXTRA_DATA);
-
-            try {
-                if (!StoreController.getInstance().buyWithMarketInner(this, productId, payload)) {
+            if ((!TextUtils.isEmpty(intent.getAction())) && intent.getAction().equals(OPENPF_ACTION_START_ACTIVITY)) {
+                Intent broadcastIntent = new Intent(OPENPF_ACTION_ACTIVITY_STARTED);
+                sendBroadcast(broadcastIntent);
+            } else {
+                String productId = intent.getStringExtra(PROD_ID);
+                String payload = intent.getStringExtra(EXTRA_DATA);
+                try {
+                    if (!StoreController.getInstance().buyWithMarketInner(this, productId, payload)) {
+                        finish();
+                    }
+                } catch (Exception e) {
+                    StoreUtils.LogError(TAG, "Error purchasing item " + e.getMessage());
+                    BusProvider.getInstance().post(new UnexpectedStoreErrorEvent(e.getMessage()));
                     finish();
                 }
-            } catch (Exception e) {
-                StoreUtils.LogError(TAG, "Error purchasing item " + e.getMessage());
-                BusProvider.getInstance().post(new UnexpectedStoreErrorEvent(e.getMessage()));
-                finish();
             }
+
         }
 
         @Override
@@ -510,12 +498,10 @@ public class StoreController {
     }
 
     private boolean isIabServiceInitialized() {
-        checkForInit();
         return openIabService.isIabServiceInitialized();
     }
 
     private boolean handleActivityResult(int requestCode, int resultCode, Intent data) {
-        checkForInit();
         return openIabService.handleActivityResult(requestCode, resultCode, data);
     }
 

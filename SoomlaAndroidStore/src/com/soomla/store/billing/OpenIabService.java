@@ -7,22 +7,27 @@ package com.soomla.store.billing;
 import java.util.List;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
 
+import android.content.IntentFilter;
+import com.soomla.store.SoomlaApp;
 import com.soomla.store.StoreConfig;
+import com.soomla.store.StoreController;
 import com.soomla.store.StoreUtils;
 import org.onepf.oms.OpenIabHelper;
 import org.onepf.oms.appstore.googleUtils.IabHelper;
 import org.onepf.oms.appstore.googleUtils.Inventory;
 import org.onepf.oms.appstore.googleUtils.Purchase;
 
-public class OpenIabService{
+public class OpenIabService {
     private static final int RC_REQUEST = 10001;
     /* Private Members */
     private static final String TAG = "SOOMLA OpenIabService";
     private OpenIabHelper mHelper;
     private boolean keepIabServiceOpen = false;
-    private Activity activity;
+    private BroadcastReceiver broadcastReceiver;
 
     public void initializeBillingService(final IabCallbacks.IabInitListener iabListener) {
 
@@ -48,7 +53,7 @@ public class OpenIabService{
      * A wrapper to access IabHelper.handleActivityResult from outside
      */
     public boolean handleActivityResult(int requestCode, int resultCode, Intent data) {
-        return isIabServiceInitialized() && mHelper.handleActivityResult(requestCode, resultCode, data);
+        return /*isIabServiceInitialized() && */mHelper.handleActivityResult(requestCode, resultCode, data);
     }
 
     public void queryInventoryAsync(boolean querySkuDetails,
@@ -106,7 +111,7 @@ public class OpenIabService{
      *
      * @param onIabSetupFinishedListener is a callback that lets users to add their own implementation for when the Iab is started
      */
-    private synchronized void startIabHelper(OnIabSetupFinishedListener onIabSetupFinishedListener) {
+    private synchronized void startIabHelper(final OnIabSetupFinishedListener onIabSetupFinishedListener) {
         if (isIabServiceInitialized()) {
             StoreUtils.LogDebug(TAG, "The helper is started. Just running the post start function.");
 
@@ -117,12 +122,29 @@ public class OpenIabService{
         }
 
         StoreUtils.LogDebug(TAG, "Creating IAB helper.");
-        OpenIabHelper.Options billingOptions = StoreConfig.billingOptions;
+        final OpenIabHelper.Options billingOptions = StoreConfig.billingOptions;
         billingOptions.verifyMode = OpenIabHelper.Options.VERIFY_SKIP;
-        mHelper = new OpenIabHelper(activity, billingOptions);
-
-        StoreUtils.LogDebug(TAG, "IAB helper Starting setup.");
-        mHelper.startSetup(onIabSetupFinishedListener);
+        final Context appContext = SoomlaApp.getAppContext();
+        if (StoreConfig.hasSamsungSKUs()) {
+            broadcastReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    mHelper = new OpenIabHelper(StoreController.IabActivity.instance, billingOptions);
+                    StoreUtils.LogDebug(TAG, "IAB helper Starting setup.");
+                    mHelper.startSetup(onIabSetupFinishedListener);
+                    appContext.unregisterReceiver(broadcastReceiver);
+                }
+            };
+            appContext.registerReceiver(broadcastReceiver, new IntentFilter(StoreController.IabActivity.OPENPF_ACTION_ACTIVITY_STARTED));
+            Intent intent = new Intent(appContext, StoreController.IabActivity.class);
+            intent.setAction(StoreController.IabActivity.OPENPF_ACTION_START_ACTIVITY);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            appContext.startActivity(intent);
+        } else {
+            mHelper = new OpenIabHelper(appContext, billingOptions);
+            StoreUtils.LogDebug(TAG, "IAB helper Starting setup.");
+            mHelper.startSetup(onIabSetupFinishedListener);
+        }
     }
 
     /**
@@ -150,12 +172,12 @@ public class OpenIabService{
         }
 
 //        if (!mHelper.isAsyncInProgress()) {
-            StoreUtils.LogDebug(TAG, "Stopping OpenIabService Service");
-            mHelper.dispose();
-            mHelper = null;
-            if (iabInitListener != null) {
-                iabInitListener.success(true);
-            }
+        StoreUtils.LogDebug(TAG, "Stopping OpenIabService Service");
+        mHelper.dispose();
+        mHelper = null;
+        if (iabInitListener != null) {
+            iabInitListener.success(true);
+        }
 //        } else {
 //            String msg = "Cannot stop Google Service during async process. Will be stopped when async operation is finished.";
 //            if (iabInitListener != null) {
@@ -164,14 +186,6 @@ public class OpenIabService{
 //                StoreUtils.LogDebug(TAG, msg);
 //            }
 //        }
-    }
-
-    public void setActivity(Activity activity) {
-        this.activity = activity;
-    }
-
-    public Activity getActivity() {
-        return activity;
     }
 
 
