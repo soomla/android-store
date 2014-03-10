@@ -36,6 +36,8 @@ import com.soomla.store.events.BillingNotSupportedEvent;
 import com.soomla.store.events.BillingSupportedEvent;
 import com.soomla.store.events.IabServiceStartedEvent;
 import com.soomla.store.events.IabServiceStoppedEvent;
+import com.soomla.store.events.ItemDetailsRetrievedEvent;
+import com.soomla.store.events.ItemDetailsRetrievedFailedEvent;
 import com.soomla.store.events.ItemPurchasedEvent;
 import com.soomla.store.events.PlayPurchaseCancelledEvent;
 import com.soomla.store.events.PlayPurchaseEvent;
@@ -47,6 +49,7 @@ import com.soomla.store.events.StoreControllerInitializedEvent;
 import com.soomla.store.events.UnexpectedStoreErrorEvent;
 import com.soomla.store.exceptions.VirtualItemNotFoundException;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -140,6 +143,40 @@ public class StoreController {
             public void onIabStarted() {
                 mHelper.queryInventoryAsync(false, null, mPostInitQueryListener);
                 BusProvider.getInstance().post(new RestoreTransactionsStartedEvent());
+            }
+        });
+    }
+    
+    /**
+     * Get the details of items that has been defined in Google Play or App Store.
+     * @param productIds
+     */
+    public void getItemDetails(String[] productIds) {
+    	final List<String> additionalSkuList = Arrays.asList(productIds);
+    	startIabHelper(new OnIabStartedListener() {
+            @Override
+            public void onIabStarted() {
+		        mHelper.queryInventoryAsync(true, additionalSkuList, new IabHelper.QueryInventoryFinishedListener() {
+			   		public void onQueryInventoryFinished(IabResult result, Inventory inventory)   
+			   		{
+						if (result.isFailure()){
+							BusProvider.getInstance().post(new ItemDetailsRetrievedFailedEvent());
+							return;
+						}
+					
+						for(int i=0;i<additionalSkuList.size();i++)
+						{
+							//Is used to indicate if it's the last item
+							boolean isFinished = (i==(additionalSkuList.size()-1));
+							
+							String id = additionalSkuList.get(i);
+							String price = inventory.getSkuDetails(id).getPrice();
+							String title = inventory.getSkuDetails(id).getTitle();
+							String desc = inventory.getSkuDetails(id).getDescription();
+							BusProvider.getInstance().post(new ItemDetailsRetrievedEvent(id, price, title, desc, isFinished));
+						}
+			   		}
+				});
             }
         });
     }
