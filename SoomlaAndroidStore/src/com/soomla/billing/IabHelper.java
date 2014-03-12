@@ -351,8 +351,9 @@ public class IabHelper {
             if (response != BILLING_RESPONSE_RESULT_OK) {
                 StoreUtils.LogError(TAG, "Unable to buy item, Error response: " + getResponseDesc(response));
 
+                Purchase failPurchase = new Purchase(itemType, "{\"productId\":" + sku + "}", null);
                 result = new IabResult(response, "Unable to buy item");
-                if (listener != null) listener.onIabPurchaseFinished(result, null);
+                if (listener != null) listener.onIabPurchaseFinished(result, failPurchase);
                 // make sure to end the async operation...
                 flagEndAsync();
                 act.finish();
@@ -382,6 +383,12 @@ public class IabHelper {
 
             result = new IabResult(IABHELPER_REMOTE_EXCEPTION, "Remote exception while starting purchase flow");
             if (listener != null) listener.onIabPurchaseFinished(result, null);
+        } catch (JSONException e) {
+            StoreUtils.LogError(TAG, "Failed to generate failing purchase.");
+            e.printStackTrace();
+            
+            result = new IabResult(IABHELPER_BAD_RESPONSE, "Failed to generate failing purchase.");
+            if (mPurchaseListener != null) mPurchaseListener.onIabPurchaseFinished(result, null);
         }
     }
 
