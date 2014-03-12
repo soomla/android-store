@@ -81,8 +81,8 @@ public class StoreController {
         if (publicKey != null && publicKey.length() != 0) {
             edit.putString(StoreConfig.PUBLIC_KEY, publicKey);
         } else if (prefs.getString(StoreConfig.PUBLIC_KEY, "").length() == 0) {
-        	String err = "publicKey is null or empty. Can't initialize store!!";
-        	StoreUtils.LogError(TAG, err);
+            String err = "publicKey is null or empty. Can't initialize store!!";
+            StoreUtils.LogError(TAG, err);
             BusProvider.getInstance().post(new UnexpectedStoreErrorEvent(err));
             return false;
         }
@@ -90,7 +90,7 @@ public class StoreController {
         if (customSecret != null && customSecret.length() != 0) {
             edit.putString(StoreConfig.CUSTOM_SEC, customSecret);
         } else if (prefs.getString(StoreConfig.CUSTOM_SEC, "").length() == 0) {
-        	String err = "customSecret is null or empty. Can't initialize store!!";
+            String err = "customSecret is null or empty. Can't initialize store!!";
             StoreUtils.LogError(TAG, err);
             BusProvider.getInstance().post(new UnexpectedStoreErrorEvent(err));
             return false;
@@ -114,7 +114,7 @@ public class StoreController {
                 mHelper.queryInventoryAsync(false, null, mPostInitQueryListener);
             }
         });
-        
+
         mInitialized = true;
         BusProvider.getInstance().post(new StoreControllerInitializedEvent());
         return true;
@@ -159,7 +159,7 @@ public class StoreController {
             StoreUtils.LogError(TAG, "You didn't provide a public key! You can't make purchases.");
             throw new IllegalStateException();
         }
-        
+
         try {
             final Intent intent = new Intent(SoomlaApp.getAppContext(), IabActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -173,7 +173,7 @@ public class StoreController {
                 }
             });
         } catch(Exception e){
-        	StoreUtils.LogError(TAG, "(buyWithGooglePlay) Error purchasing item " + e.getMessage());
+            StoreUtils.LogError(TAG, "(buyWithGooglePlay) Error purchasing item " + e.getMessage());
             BusProvider.getInstance().post(new UnexpectedStoreErrorEvent(e.getMessage()));
         }
     }
@@ -245,7 +245,6 @@ public class StoreController {
         if (!mHelper.isAsyncInProgress())
         {
             StoreUtils.LogDebug(TAG, "Stopping Iab helper");
-            mHelperStop = false;
             mHelper.dispose();
             mHelper = null;
             BusProvider.getInstance().post(new IabServiceStoppedEvent());
@@ -253,9 +252,7 @@ public class StoreController {
         else
         {
             String msg = "Cannot close store during async process. Will be stopped when async operation is finished.";
-            mHelperStop = true;
             StoreUtils.LogDebug(TAG, msg);
-//        	BusProvider.getInstance().post(new UnexpectedStoreErrorEvent(msg));
         }
     }
 
@@ -283,22 +280,20 @@ public class StoreController {
         }
 
         switch (purchase.getPurchaseState()) {
-            case 0:
-                StoreUtils.LogDebug(TAG, "Purchase successful.");
-                BusProvider.getInstance().post(new PlayPurchaseEvent(pvi, developerPayload));
-                pvi.give(1);
-                BusProvider.getInstance().post(new ItemPurchasedEvent(pvi));
+        case 0:
+            StoreUtils.LogDebug(TAG, "Purchase successful.");
+            BusProvider.getInstance().post(new PlayPurchaseEvent(pvi, developerPayload));
 
-                consumeIfConsumable(purchase);
-                break;
-            case 1:
-            case 2:
-                StoreUtils.LogDebug(TAG, "Purchase refunded.");
-                if (!StoreConfig.friendlyRefunds) {
-                    pvi.take(1);
-                }
-                BusProvider.getInstance().post(new PlayRefundEvent(pvi, developerPayload));
-                break;
+            consumePurchaseAndAcquireItem(purchase);
+            break;
+        case 1:
+        case 2:
+            StoreUtils.LogDebug(TAG, "Purchase refunded.");
+            if (!StoreConfig.friendlyRefunds) {
+                pvi.take(1);
+            }
+            BusProvider.getInstance().post(new PlayRefundEvent(pvi, developerPayload));
+            break;
         }
     }
 
@@ -321,20 +316,35 @@ public class StoreController {
         }
     }
 
-    private void consumeIfConsumable(Purchase purchase) {
-        String sku = purchase.getSku();
+    private void consumePurchaseAndAcquireItem(Purchase purchase) {
+        final String sku = purchase.getSku();
         try {
-            PurchasableVirtualItem pvi = StoreInfo.getPurchasableItem(sku);
-
-            if (!(pvi instanceof NonConsumableItem)) {
-                mHelper.consume(purchase);
+            final PurchasableVirtualItem pvi = StoreInfo.getPurchasableItem(sku);
+            if ( pvi instanceof NonConsumableItem ) {
+                pvi.give(1);
+                BusProvider.getInstance().post(new ItemPurchasedEvent(pvi));
+            }
+            else {
+                mHelper.consumeAsync(purchase, new IabHelper.OnConsumeFinishedListener() {
+                    @Override
+                    public void onConsumeFinished(Purchase purchase, IabResult result) {
+                        if(result.isSuccess()) {
+                            pvi.give(1);
+                            BusProvider.getInstance().post(new ItemPurchasedEvent(pvi));
+                        } else {
+                            StoreUtils.LogDebug(TAG, "Error while consuming: " + sku);
+                            BusProvider.getInstance().post(new UnexpectedStoreErrorEvent(result.getMessage()));
+                        }
+                        stopIabHelper();
+                    }
+                });
             }
         } catch (VirtualItemNotFoundException e) {
             StoreUtils.LogError(TAG, "(purchaseActionResultCancelled) ERROR : Couldn't find the " +
                     "VirtualCurrencyPack OR GoogleMarketItem  with productId: " + sku +
                     ". It's unexpected so an unexpected error is being emitted.");
             BusProvider.getInstance().post(new UnexpectedStoreErrorEvent());
-        } catch (IabException e) {
+        } catch (IllegalStateException e) {
             StoreUtils.LogDebug(TAG, "Error while consuming: " + sku);
             BusProvider.getInstance().post(new UnexpectedStoreErrorEvent(e.getMessage()));
         }
@@ -364,7 +374,7 @@ public class StoreController {
             } else {
                 if (result.getResponse() == IabHelper.BILLING_RESPONSE_RESULT_ITEM_ALREADY_OWNED) {
                     StoreUtils.LogDebug(TAG, "Tried to buy an item that was not consumed. Trying to consume it if it's non consumable.");
-                    consumeIfConsumable(purchase);
+                    consumePurchaseAndAcquireItem(purchase);
                 }
 
                 purchaseActionResultUnexpected(result);
@@ -390,7 +400,7 @@ public class StoreController {
                 StoreUtils.LogError(TAG, "Query inventory error: " + result.getMessage());
                 purchaseActionResultUnexpected(result);
             }
-            
+
             BusProvider.getInstance().post(new RestoreTransactionsEvent(true));
 
             stopIabHelper();
@@ -428,8 +438,6 @@ public class StoreController {
     private boolean keepIabServiceOpen = false;
 
     private IabHelper mHelper;
-    private boolean mHelperStop = false;
-
 
     private abstract class OnIabStartedListener implements IabHelper.OnIabSetupFinishedListener {
 
@@ -440,7 +448,6 @@ public class StoreController {
                 String msg = "There's no connectivity with the billing service.";
                 StoreUtils.LogDebug(TAG, msg);
                 BusProvider.getInstance().post(new BillingNotSupportedEvent());
-//                BusProvider.getInstance().post(new UnexpectedStoreErrorEvent(msg));
                 stopIabHelper();
                 return;
             }
@@ -459,10 +466,11 @@ public class StoreController {
      * Do not start it on your own.
      */
     public static class IabActivity extends Activity {
-    	
+
         @Override
         protected void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
+
             Intent intent = getIntent();
             String productId = intent.getStringExtra(StoreController.PROD_ID);
             String payload = intent.getStringExtra(StoreController.EXTRA_DATA);
@@ -480,8 +488,8 @@ public class StoreController {
 
         @Override
         protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-			if (!StoreController.getInstance().handleActivityResult(requestCode, resultCode, data)) {
-				super.onActivityResult(requestCode, resultCode, data);
+            if (!StoreController.getInstance().handleActivityResult(requestCode, resultCode, data)) {
+                super.onActivityResult(requestCode, resultCode, data);
 
                 if (StoreController.getInstance().mHelper == null)
                 {
@@ -490,7 +498,7 @@ public class StoreController {
                 }
             }
 
-			finish();
+            finish();
         }
     }
 }
