@@ -222,7 +222,8 @@ public class StoreController {
                         handleErrorResult(message);
                     }
                 };
-                StoreConfig.InAppBillingService.queryInventoryAsync(refreshMarketItemsDetails, null, queryInventoryListener);
+                final List<String> nonConsumableProductIds = StoreInfo.getNonConsumableProductIds();
+                StoreConfig.InAppBillingService.queryInventoryAsync(refreshMarketItemsDetails, nonConsumableProductIds, queryInventoryListener);
                 BusProvider.getInstance().post(new RestoreTransactionsStartedEvent());
             }
 

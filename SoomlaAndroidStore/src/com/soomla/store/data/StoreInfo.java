@@ -218,6 +218,15 @@ public class StoreInfo {
 
     public static List<String> getAllProductIds() { return new ArrayList<String>(mPurchasableItems.keySet()); }
 
+    public static List<String> getNonConsumableProductIds() {
+        List<String> productIds = new ArrayList<String>(mNonConsumables.size());
+        for (NonConsumableItem next : mNonConsumables) {
+            productIds.add(next.getItemId());
+        }
+
+        return productIds;
+    }
+
     /** Private functions **/
 
     private static void fromJSONObject(JSONObject jsonObject) throws JSONException{
