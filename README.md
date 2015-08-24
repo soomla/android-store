@@ -157,7 +157,11 @@ our _Knowledge Base_ and use them like this:
   >  Optionally you can turn on `verifyOnServerFailure` if you want to get purchases automatically verified in case of network failures during the verification process:
   >
   > ``` java
-  > GooglePlayIabService.getInstance().verifyOnServerFailure = true;
+  > GooglePlayIabService.getInstance().configVerifyPurchases(new HashMap<String, Object>() {{
+  >     put("clientId", <YOU_CLIENT_ID>);
+  >     put("clientSecret", <YOUR_CLIENT_SECRET>);
+  >     put("refreshToken", <YOUR_REFRESH_TOKEN>);
+  >     put("verifyOnServerFailure", true);
   > ```
 
 ####**If you have an in-game storefront**
@@ -223,7 +227,7 @@ VirtualCurrencyPack TEN_COINS_PACK = new VirtualCurrencyPack(
 Now you can use _StoreInventory_ to buy your new VirtualCurrencyPack:
 
 ```Java
-StoreInventory.buy(TEN_COINS_PACK.getItemId());
+StoreInventory.buy(TEN_COINS_PACK.getItemId(), null);
 ```
 
 And that's it! android-store knows how to contact Google Play for you and will redirect your users to their purchasing system to complete the transaction.
