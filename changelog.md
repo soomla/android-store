@@ -1,3 +1,8 @@
+### v3.6.21 [view commit logs](https://github.com/soomla/android-store/compare/v3.6.20...v3.6.21)
+
+* Features
+  * Implement subscriptions
+
 ### v3.6.20 [view commit logs](https://github.com/soomla/android-store/compare/v3.6.19...v3.6.20)
 
 * Changes

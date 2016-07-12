@@ -29,7 +29,7 @@ Check out our [Wiki] (https://github.com/soomla/android-store/wiki) for more inf
 
 #### Pre baked jars:
 
-- [android-store v3.6.20](http://library.soom.la/fetch/android-store/3.6.20?cf=github)
+- [android-store v3.6.21](http://library.soom.la/fetch/android-store/3.6.21?cf=github)
 
 #### From sources:
  - Clone this repository recursively: `git clone --recursive https://github.com/soomla/android-store.git`;
